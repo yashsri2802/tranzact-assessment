@@ -41,7 +41,7 @@ $$\text{Theoretical Peak Concurrency} = 33.34 \text{ PDFs/sec} \times 2.5 \text{
   $$84 \text{ workers} \times 400 \text{ MB RAM} = 33,600 \text{ MB} \approx 33.6 \text{ GB RAM}$$
 
 ### 2. Ambiguity & Budget Contradiction Analysis
-Running an AWS setup with 33.6 GB dedicated RAM and 42 vCPU cores 24/7 costs upwards of **$300–$400/month**, which directly violates the **₹12,500 (~$150 USD)** monthly budget constraint. Furthermore, processing 2,000 PDFs per minute would reach the customer's full monthly volume quota of 30,000 PDFs in just **15 minutes**.
+Running an AWS setup with 33.6 GB dedicated RAM and 42 vCPU cores 24/7 costs upwards of **$300–$400/month**, which directly violates the **₹12,500 (~$131.58 USD at ₹95/$)** monthly budget constraint. Furthermore, processing 2,000 PDFs per minute would reach the customer's full monthly volume quota of 30,000 PDFs in just **15 minutes**.
 
 This proves mathematically that 1,000 req/min is a short-duration burst rate rather than sustained daily load.
 
@@ -162,17 +162,17 @@ Over time, accumulated zombie processes pollute host memory, leading to kernel O
 
 ## 8. Cost Estimation
 
-Monthly infrastructure cost breakdown for generating **30,000 PDFs/month** under the **₹12,500 (~$150 USD)** budget constraint:
+Monthly infrastructure cost breakdown for generating **30,000 PDFs/month** under the **₹12,500 (~$131.58 USD at ₹95/$)** budget constraint:
 
-| Component | Specification / Details | Monthly Cost (USD) | Monthly Cost (INR @ ₹83/$) |
+| Component | Specification / Details | Monthly Cost (USD) | Monthly Cost (INR @ ₹95/$) |
 | :--- | :--- | :--- | :--- |
-| **Compute Worker** | AWS EC2 `t4g.xlarge` Reserved (4 vCPUs, 16 GB RAM, ARM) | $48.00 | ₹3,984 |
-| **Primary Monolith & DB**| Existing EC2 (`r6i.large`), RDS PostgreSQL, & Redis[cite: 2] | $0.00 *(Existing)* | ₹0 *(Existing)* |
-| **Object Storage (S3)** | 30,000 PDFs/mo $\times$ 0.5 MB = 15 GB storage + Snapshots[cite: 1, 2] | $0.35 | ₹29 |
-| **Network Data Transfer**| 15 GB outbound download bandwidth | $1.35 | ₹112 |
-| **S3 API Requests** | ~100,000 PUT/GET requests | $0.40 | ₹33 |
-| **Monitoring & Logs** | AWS CloudWatch Logs (2 GB retention) | $1.50 | ₹125 |
-| **Buffer / Contingency**| Elasticity allowance for peak traffic surges | $15.00 | ₹1,245 |
-| **TOTAL ESTIMATED COST**| **Fully provisioned production architecture** | **~$66.60 / mo** | **~₹5,528 / mo** |
+| **Compute Worker** | AWS EC2 `t4g.xlarge` Reserved (4 vCPUs, 16 GB RAM, ARM) | $48.00 | ₹4,560 |
+| **Primary Monolith & DB**| Existing EC2 (`r6i.large`), RDS PostgreSQL, & Redis | $0.00 *(Existing)* | ₹0 *(Existing)* |
+| **Object Storage (S3)** | 30,000 PDFs/mo $\times$ 0.5 MB = 15 GB storage + Snapshots[cite: 1, 2] | $0.35 | ₹33 |
+| **Network Data Transfer**| 15 GB outbound download bandwidth | $1.35 | ₹128 |
+| **S3 API Requests** | ~100,000 PUT/GET requests | $0.40 | ₹38 |
+| **Monitoring & Logs** | AWS CloudWatch Logs (2 GB retention) | $1.50 | ₹143 |
+| **Buffer / Contingency**| Elasticity allowance for peak traffic surges | $15.00 | ₹1,425 |
+| **TOTAL ESTIMATED COST**| **Fully provisioned production architecture** | **~$66.60 / mo** | **~₹6,327 / mo** |
 
-*Conclusion:* The proposed design runs at approximately **₹5,528/month**, leaving a ~55% safety margin under the **₹12,500/month** budget ceiling.
+*Conclusion:* The proposed design runs at approximately **₹6,327/month**, leaving a ~49% safety margin under the **₹12,500/month** budget ceiling.
