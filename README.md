@@ -22,48 +22,7 @@ The ERP platform requires offloading intensive HTML-to-PDF template rendering fr
 
 ## 🏗️ Architecture Overview
 
-flowchart TB
-    subgraph ERP["Existing ERP Infrastructure"]
-        Browser["Browser Client"]
-        Django["Django Monolith<br/>EC2 Instance"]
-        RDS[("RDS PostgreSQL<br/>AuditVault")]
-        Redis[("ElastiCache Redis<br/>BullMQ Queues")]
-
-        Browser --> Django
-        Django <--> RDS
-        Django --> Redis
-    end
-
-    subgraph PDF["Proposed PDF Microservice"]
-        API["Express API Gateway<br/>Authentication and Routes"]
-        Fast["Fast-Lane Workers<br/>Single PDFs · Concurrency 8"]
-        Batch["Batch-Lane Workers<br/>Bulk PDFs · Concurrency 4"]
-        Heavy["Heavy-Document Workers<br/>Concurrency 1–2"]
-
-        API --> Fast
-        Redis --> Fast
-        Redis --> Batch
-        Redis --> Heavy
-    end
-
-    subgraph STORAGE["AWS S3 Storage Layer"]
-        Snap["Immutable Job Snapshots<br/>/snapshots/{job_id}.json"]
-        PDFs["Generated PDFs<br/>/pdfs/{tenant_id}/{doc_id}.pdf"]
-        ZIP["Bulk ZIP Archives<br/>/zips/{job_id}.zip"]
-    end
-
-    Django -->|"Submit requests and snapshots"| API
-    API -->|"Store job snapshots"| Snap
-    Fast --> PDFs
-    Batch --> ZIP
-    Heavy --> PDFs
-
-    Browser -.->|"Pre-signed URLs"| PDFs
-    Browser -.->|"Pre-signed URLs"| ZIP
-
-    Fast -->|"SHA-256 audit records"| RDS
-    Batch -->|"SHA-256 audit records"| RDS
-    Heavy -->|"SHA-256 audit records"| RDS
+High-resolution diagram: architecture-diagram.png
     
 ---
 
@@ -109,17 +68,6 @@ flowchart TB
 
 > **Budget Margin:** Operating at **~₹6,327/month** leaves a **~49% safety margin** under the **₹12,500/month** limit.
 
----
-
-## 📁 Repository Structure
-
-.
-├── APPROACH.md                # Comprehensive technical design document (Templates, Math, Trade-offs)
-├── README.md                  # High-level architecture overview and summary
-├── architecture-diagram.png   # High-resolution system architecture diagram
-└── src/                       # Reference microservice implementation snippets
-├── server.js              # Express API gateway & S3 snapshot uploader
-└── worker.js              # BullMQ worker engine with heavy-document guard & SHA-256 auditing   
 ---
 
 ## 📄 Documentation & Submission References
