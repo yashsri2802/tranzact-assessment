@@ -130,8 +130,7 @@ Prompts and architectural evaluation logs generated during design review:
    * *Outcome:* Formulated pre-render inspection and heavy-document worker isolation.
 
 *Public conversation sharing links:*
-- `https://chatgpt.com/share/placeholder-link-1` *(Update after generating public link)*
-- `https://chatgpt.com/share/placeholder-link-2` *(Update after generating public link)*
+- `https://share.gemini.google/5pdhChqdukJN`
 
 ---
 
