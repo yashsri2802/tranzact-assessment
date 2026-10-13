@@ -22,11 +22,49 @@ The ERP platform requires offloading intensive HTML-to-PDF template rendering fr
 
 ## 🏗️ Architecture Overview
 
-                 ┌──────────────────────────────────────────────────┐
-                 │          Existing ERP Infrastructure             │
-┌───────────┐       │  ┌─────────────────┐       ┌──────────────────┐  ││  Browser  │───────┼─>│ Django Monolith │──────>│ RDS (PostgreSQL) │  ││  Client   │       │  │  (EC2 Instance) │       │  (AuditVault)    │  │└─────┬─────┘       │  └────────┬────────┘       └──────────────────┘  ││             │           │                                      ││             │           ▼                                      ││             │  ┌─────────────────┐                             ││             │  │ ElastiCache /   │ (Shared Task Queues)        ││             │  │     Redis       │                             ││             │  └────────┬────────┘                             ││             └───────────┼──────────────────────────────────────┘│                         ││                         ▼│             ┌──────────────────────────────────────────────────┐│             │       Proposed PDF Microservice Node             ││             │       (Docker on EC2 t4g.xlarge / ARM)           ││             │                                                  ││             │  ┌─────────────────┐    ┌─────────────────────┐  ││             │  │ Express Gateway │───>│ Fast-Lane Workers   │  ││             │  │ (Auth & Routes) │    │ (Single: Cap 8)     │  ││             │  └─────────────────┘    └──────────┬──────────┘  ││             │                         ┌──────────┴──────────┐  ││             │                         │ Batch-Lane Workers  │  ││             │                         │ (Bulk: Cap 4)       │  ││             │                         └──────────┬──────────┘  ││             └────────────────────────────────────┼─────────────┘│                                                  ││             ┌────────────────────────────────────┼─────────────┐│             │         AWS S3 Storage Layer       │             │└─────────────┼────────────────────────────────────▼─────────────┘Direct Pre-Signed  │     /snapshots/ {job_id}.jsonResumable Downloads│     /pdfs/      {tenant_id}/{doc_id}.pdf(Range Headers)    │     /zips/      {job_id}.zip└──────────────────────────────────────────────────┘
-> **Full High-Resolution Diagram:** See [`architecture-diagram.png`](./architecture-diagram.png) in the repository root.
+flowchart TB
+    subgraph ERP["Existing ERP Infrastructure"]
+        Browser["Browser Client"]
+        Django["Django Monolith<br/>EC2 Instance"]
+        RDS[("RDS PostgreSQL<br/>AuditVault")]
+        Redis[("ElastiCache Redis<br/>BullMQ Queues")]
 
+        Browser --> Django
+        Django <--> RDS
+        Django --> Redis
+    end
+
+    subgraph PDF["Proposed PDF Microservice"]
+        API["Express API Gateway<br/>Authentication and Routes"]
+        Fast["Fast-Lane Workers<br/>Single PDFs · Concurrency 8"]
+        Batch["Batch-Lane Workers<br/>Bulk PDFs · Concurrency 4"]
+        Heavy["Heavy-Document Workers<br/>Concurrency 1–2"]
+
+        API --> Fast
+        Redis --> Fast
+        Redis --> Batch
+        Redis --> Heavy
+    end
+
+    subgraph STORAGE["AWS S3 Storage Layer"]
+        Snap["Immutable Job Snapshots<br/>/snapshots/{job_id}.json"]
+        PDFs["Generated PDFs<br/>/pdfs/{tenant_id}/{doc_id}.pdf"]
+        ZIP["Bulk ZIP Archives<br/>/zips/{job_id}.zip"]
+    end
+
+    Django -->|"Submit requests and snapshots"| API
+    API -->|"Store job snapshots"| Snap
+    Fast --> PDFs
+    Batch --> ZIP
+    Heavy --> PDFs
+
+    Browser -.->|"Pre-signed URLs"| PDFs
+    Browser -.->|"Pre-signed URLs"| ZIP
+
+    Fast -->|"SHA-256 audit records"| RDS
+    Batch -->|"SHA-256 audit records"| RDS
+    Heavy -->|"SHA-256 audit records"| RDS
+    
 ---
 
 ## 🔑 Key Engineering Decisions
