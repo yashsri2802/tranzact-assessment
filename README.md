@@ -22,7 +22,7 @@ The ERP platform requires offloading intensive HTML-to-PDF template rendering fr
 
 ## 🏗️ Architecture Overview
 
-High-resolution diagram: architecture-diagram.png
+> **Full High-Resolution Diagram:** See [`architecture-diagram.png`](./architecture-diagram.png) in the repository root.
     
 ---
 
