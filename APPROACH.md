@@ -130,7 +130,7 @@ Prompts and architectural evaluation logs generated during design review:
    * *Outcome:* Formulated pre-render inspection and heavy-document worker isolation.
 
 *Public conversation sharing links:*
-- `https://share.gemini.google/5pdhChqdukJN`
+[Gemini Conversation](https://share.gemini.google/5pdhChqdukJN)
 
 ---
 
